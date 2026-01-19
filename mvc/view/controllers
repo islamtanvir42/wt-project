@@ -1,0 +1,714 @@
+ <?php
+/* 
+#changepasswordaction 
+*/
+
+session_start();
+require '../model/data.php';
+
+
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+    $valid=true;
+
+
+//var
+
+   $mobile=sanitize($_POST['phoneno']);
+
+   $newpassword=sanitize($_POST['newpassword']);
+
+
+   if(empty($mobile) || empty($newpassword)){
+
+
+
+    $_SESSION['empty']="All the fileds must be filled up*";
+
+    
+            
+    header("Location: ../views/changepassword.php");
+
+    $valid=false;
+
+
+
+   }
+
+   elseif($valid=change_password($mobile,$newpassword)){
+        
+    
+
+
+    $_SESSION['empty']="Password changed successfully*";
+
+    header("Location: ../views/changepassword.php");
+
+
+
+
+   }
+
+
+   else{
+
+    $_SESSION['empty']="Password changed failed *";
+
+    header("Location: ../views/changepassword.php");
+
+   }
+
+
+
+
+
+
+
+
+    
+} 
+
+
+
+else {
+    echo "Invalid password";
+}
+
+function sanitize($data) {
+    $data = htmlspecialchars($data);
+    return $data;
+}
+?>
+
+
+<?php
+
+/*forgetpassaction.php*/
+
+require '../model/data.php'; 
+
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+    if(isset($_POST['email']) && !empty($_POST['email'])) {
+        $email = $_POST['email'];
+        echo "Email : " . $email; // Debugging statement to check if email is received
+
+        echo"<br>";
+        $doctorPassword = getDoctorPassword($email);
+
+        if ($doctorPassword !== null) {
+            echo "Doctor's password: " . $doctorPassword;
+        } else {
+            echo "Doctor password not found!";
+        }
+    } else {
+        echo "Email is not set or empty!";
+    }
+}
+?>
+
+<?php
+
+/*login action.php*/
+
+session_start();
+require '../model/data.php'; // Include your database connection file
+
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+    $isValid = true;
+    $phone = sanitize($_POST['phoneno']);
+    $password = sanitize($_POST['password']);
+
+    if(empty($phone) || empty($password)){
+        $isValid=false;
+        $_SESSION['error_login']="Please fill up all fields";
+        header("Location: ../views/login.php");
+        exit();
+    }
+    else{
+        $isValid=login($phone,$password);
+        if ($isValid ) {
+            $_SESSION['logged']=true;
+            $_SESSION['user']=$phone;
+            header("Location: ../views/dashbord.php");
+            exit();
+        } 
+        else {
+
+            $_SESSION['error_login']="Username or password incorrect";
+            header("Location: ../views/login.php");
+            exit();
+        }
+    }
+}
+else{
+    $_SESSION['error_login']="Invalid Request";
+    header("Location: ../views/login.php"); 
+    exit();
+}
+
+function sanitize($data) {
+    $data = htmlspecialchars($data);
+    return $data;
+}
+?>
+
+<?php
+
+/*logout.php*/
+
+session_start();
+session_destroy();
+header("Location: ../views/login.php");
+exit();
+?>
+
+<?php
+
+/*regis action.php*/
+
+session_start();
+
+ require '../model/Data.php';
+
+
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+   $isValid = true;
+   
+        $firstname = sanitize($_POST['fname']);
+        $lastname = sanitize($_POST['lname']);
+        $username = sanitize($_POST['username']);
+        $password = sanitize($_POST['password']);
+        $confirmpassword = sanitize($_POST['confirmpassword']);
+        $gender = sanitize($_POST['gender']);
+        $email = sanitize($_POST['email']);
+        $mobile = sanitize($_POST['mobile']);
+        $region = sanitize($_POST['region']);
+        $city = sanitize($_POST['city']);
+        $address = sanitize($_POST['address']);
+        $profilePic = $_FILES['profile'];
+
+
+        $fullname = $firstname . ' ' . $lastname;
+        $area=$region . ',' . $city;
+         
+
+         if ($password !=$confirmpassword) {
+             
+             $_SESSION['not_match']="Password and confirm does not match";
+             $isValid=false;
+         }
+      
+
+
+     
+
+    if (empty($firstname)) {
+            $_SESSION['empty_error_firstname'] ="Please enter your firstname.";
+
+           
+            $isValid = false;
+
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_firstname']);
+                   
+                   
+                  
+       }
+
+       if (empty($lastname)) {
+
+             $_SESSION['empty_error_lastname'] ="Please enter your lastname.";
+
+            $isValid = false;
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_lastname']);
+                 
+                  
+       }
+
+
+       if (empty($username)) {
+        $_SESSION['empty_error_username'] ="Please enter your username.";
+        $isValid = false;
+
+    }
+
+     else {
+                
+              unset($_SESSION['empty_error_username']);
+               
+               
+   }
+
+
+   if (empty($password)) {
+        $_SESSION['empty_error_password'] ="Please enter your password.";
+        $isValid = false;
+
+    }
+
+     else {
+                
+              unset($_SESSION['empty_error_password']);
+             
+               
+   }
+
+
+
+    if (strlen($password) < 6) {
+        
+        $isValid=false;
+
+        $_SESSION['Invalid_password_length']="Password length at least 6";
+    }
+
+    else{
+
+            unset($_SESSION['Invalid_password_length']);
+    }
+
+    // Check if password contains at least one letter and one number
+    if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9]/', $password)) {
+
+     $_SESSION['Invalid_password_format']="Password must be combination of letter and number ";
+
+        $isValid=false;
+    }
+
+    else{
+
+        unset($_SESSION['Invalid_password_format']);
+    }
+
+
+
+
+
+
+
+
+   if (empty($confirmpassword)) {
+        $_SESSION['empty_error_confirmpassword'] ="Please enter your confirm password.";
+        $isValid = false;
+
+    }
+
+     else {
+                
+              unset($_SESSION['empty_error_confirmpassword']);
+              
+   }
+
+
+    if (empty($gender)) {
+            $_SESSION['empty_error_gender'] ="Please select your gender.";
+            //$_SESSION['gender'] ='';
+            $isValid = false;
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_gender']);
+                  
+                  
+       }
+
+
+        if (empty($email)) {
+            $_SESSION['empty_error_email'] ="Please enter your email address.";
+            $isValid = false;
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_email']);
+
+                  
+                  
+       }
+
+
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+            $_SESSION['invalid_email']= "Invalid email format ";
+           
+
+           $isValid=false;
+
+        } 
+
+        else{
+          
+          unset($_SESSION['invalid_email']);
+
+        }
+
+
+
+     
+        
+
+        if (empty($mobile)) {
+            $_SESSION['empty_error_mobile'] ="Please enter your mobile number.";
+            $isValid = false;
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_mobile']);
+                 
+                  
+       }
+
+
+
+  if (empty($address)) {
+            $_SESSION['empty_error_address'] ="Please enter your full address .";
+            $isValid = false;
+
+        }
+
+         else {
+                    
+                  unset($_SESSION['empty_error_address']);
+                   
+
+                  
+       }
+
+       
+
+
+    
+    
+    $s=(string)$mobile;//mobile number validation  must be numeric and length is exact 11
+      
+      if (!is_numeric($mobile) || strlen($s)!=11 ) {
+        
+        $_SESSION['invalid_number']="Invalid Mobile number ";
+         $isValid = false;
+      }
+     else{
+          
+          unset($_SESSION['invalid_number']);
+
+        }
+
+
+
+
+if (isset($_POST['register'])) {
+    if (!empty($_FILES['profile']['name'])) {
+        $file = $_FILES['profile'];
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+
+        if ($file['size'] > 5 * 1024 * 1024) {
+            $_SESSION['error_size'] = "File size cannot exceed 5 MB";
+            $isValid = false; // Set validity to false
+        } elseif (!in_array($ext, ['png', 'jpg', 'jpeg', 'svg'])) {
+            $_SESSION['error_ext'] = "File must be an image file";
+            $isValid = false; // Set validity to false
+        } else {
+            // Move the uploaded file to the destination directory
+            $destination = 'zz/' . basename($file['name']);
+            if (move_uploaded_file($file['tmp_name'], $destination)) {
+                $_SESSION['success'] = "File uploaded successfully";
+            } else {
+                $_SESSION['error_upload'] = "Error uploading file. Please try again.";
+                $isValid = false; // Set validity to false
+            }
+        }
+    } 
+}
+
+else{
+
+
+    $isValid=false;
+}
+
+       
+
+    
+    
+    if ($isValid ) {
+
+        $isValid=Registration($username, $fullname, $password, $gender, $email, $mobile, $area, $address, $profilePic);
+      
+        header("Location: ../view/UserLogin.php");
+        exit();
+        
+    } 
+
+    elseif($isValid=false and $data=false) {
+        
+       header("Location: ../view/Registration.php");
+       //unset($_SESSION['error_firstname']);        
+    }
+
+  }
+    
+
+ else{
+
+     echo "Invalid Request";
+      
+ }
+ 
+
+
+ function sanitize($data) {
+    $data = htmlspecialchars($data);
+    return $data;
+  }
+?>
+
+<?php
+
+/*registration action.php*/
+
+session_start();
+
+require '../model/db.php';
+
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $isValid = true;
+
+    function sanitize($res) {
+        $res = htmlspecialchars($res);
+        return $res;
+    }
+
+    $fullname = sanitize($_POST['fullename']);
+    $email = sanitize($_POST['email']);
+    $phoneno = sanitize($_POST['phoneno']);
+    $password = sanitize($_POST['password']);
+    $confirmpassword = sanitize($_POST['confirmpassword']);
+    $gender = isset($_POST['gender']) ? sanitize($_POST['gender']) : '';
+
+    if ($password != $confirmpassword) {
+        $_SESSION['not_match'] = "password & confirmpassword not match";
+        $isValid = false;
+    } else {
+        unset($_SESSION['not_match']);
+    }
+
+    if (empty($fullname)) {
+        $_SESSION['empty_fullname'] = "please fill up fullname";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_fullname']);
+    }
+
+    if (empty($email)) {
+        $_SESSION['empty_email'] = "please fill up email";
+        $isValid = false;
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['invalid_email'] = "Invalid email format";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_email']);
+        unset($_SESSION['invalid_email']);
+    }
+
+    if (empty($phoneno)) {
+        $_SESSION['empty_phoneno'] = "please fill up Phone Number";
+        $isValid = false;
+    } elseif (!preg_match('/^\d{11}$/', $phoneno)) {
+        $_SESSION['invalid_phoneno'] = "Please enter a valid 11-digit phone number";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_phoneno']);
+    }
+
+    if (empty($password)) {
+        $_SESSION['empty_password'] = "please fill up password";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_password']);
+    }
+
+    if (strlen($password) < 4) {
+        $_SESSION['Invalid_password_length'] = "Password length should be at least 4 characters";
+        $isValid = false;
+    } else {
+        unset($_SESSION['Invalid_password_length']);
+    }
+
+    if ( !preg_match('/[0-9]/', $password)) {
+        $_SESSION['Invalid_password'] = "Password must be a combination of letters and numbers";
+        $isValid = false;
+    } else {
+        unset($_SESSION['Invalid_password']);
+    }
+
+    if (empty($confirmpassword)) {
+        $_SESSION['empty_confirmpassword'] = "please fill up confirmpassword";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_confirmpassword']);
+        unset($_SESSION['invalid_phoneno']);
+    }
+
+    if (empty($gender)) {
+        $_SESSION['empty_gender'] = "Please select your gender";
+        $isValid = false;
+    } else {
+        unset($_SESSION['empty_gender']);
+    }
+
+    if ($isValid) {
+        $isValid=insert_doctor($fullname, $email, $phoneno, $password, $gender);
+        header("Location: ../views/login.php");
+        
+    } else {
+        header("Location: ../views/registration.php");
+        
+    }
+} else {
+    echo "Request not valid";
+}
+?>
+
+<?php
+
+/*updateprofileaction.php*/
+
+session_start();
+
+require '../model/data.php';
+
+if (!isset($_SESSION['LoggedIn'])) {
+    header("Location: login.php");
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Fetch user data
+    $userData = update($_SESSION['user']);
+    
+    if ($userData) {
+        // Extract user data
+        $doctor_ID = $userData['doctorID'];
+        $fullName = $userData['fullname'];
+        $email = $userData['email'];
+        $mobile = $userData['mobile'];
+        $password = $userData['password'];
+        $gender = $userData['gender'];
+    }
+
+
+    if (empty($doctor_ID)) {
+      $_SESSION['empty_error_doctor_ID'] ="Please enter your Doctor id.";
+    
+      $isValid = false;
+
+  }
+
+   else {
+              
+     unset($_SESSION['empty_error_doctor_ID']);                                
+ }
+
+
+    if (empty($firstname)) {
+      $_SESSION['empty_error_fullname'] ="Please enter your fullname.";
+    
+      $isValid = false;
+
+  }
+
+   else {
+              
+     unset($_SESSION['empty_error_fullname']);                                
+ }
+
+
+ if (empty($email)) {
+  $_SESSION['empty_email'] = "please fill up email";
+  $isValid = false;
+} elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  $_SESSION['invalid_email'] = "Invalid email format";
+  $isValid = false;
+} else {
+  unset($_SESSION['empty_email']);
+  unset($_SESSION['invalid_email']);
+}
+
+if (empty($phoneno)) {
+  $_SESSION['empty_phoneno'] = "please fill up Phone Number";
+  $isValid = false;
+} elseif (!preg_match('/^\d{11}$/', $phoneno)) {
+  $_SESSION['invalid_phoneno'] = "Please enter a valid 11-digit phone number";
+  $isValid = false;
+} else {
+  unset($_SESSION['empty_phoneno']);
+}
+
+
+
+if (empty($password)) {
+  $_SESSION['empty_password'] = "please fill up password";
+  $isValid = false;
+} else {
+  unset($_SESSION['empty_password']);
+}
+
+if (strlen($password) < 4) {
+  $_SESSION['Invalid_password_length'] = "Password length should be at least 4 characters";
+  $isValid = false;
+} else {
+  unset($_SESSION['Invalid_password_length']);
+}
+
+if ( !preg_match('/[0-9]/', $password)) {
+  $_SESSION['Invalid_password'] = "Password must be a combination of letters and numbers";
+  $isValid = false;
+} else {
+  unset($_SESSION['Invalid_password']);
+}
+
+
+
+if (empty($gender)) {
+  $_SESSION['empty_gender'] = "Please select your gender";
+  $isValid = false;
+} else {
+  unset($_SESSION['empty_gender']);
+}
+
+
+if ($isValid) {
+  $isValid=update( $doctor_ID,$fullname, $email, $phoneno, $password, $gender);
+  header("Location:../views/dashbord.php ");
+  
+} else {
+  header("Location:../views/updateprofile ");
+  
+}
+}
+else {
+echo "Request not valid";
+}
+
+
+
+
+
+
+
+?>
